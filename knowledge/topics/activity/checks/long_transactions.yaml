@@ -1,0 +1,46 @@
+---
+name: Long-running transactions
+description: Shows transactions running longer than a specified duration.
+requires_monitor: true
+result: current
+guidance:
+  use_when:
+    - Database-backed requests are slow or timing out.
+    - Vacuum cannot remove old row versions.
+  inspect:
+    - Transactions with unusually old xact_start values.
+    - Sessions that are idle in transaction or may be retaining locks.
+  related:
+    - locks.blocking
+    - statements.top
+    - vacuum.dead_tuples
+columns:
+  datname: Database to which the session is connected.
+  duration: Time elapsed since the transaction began.
+  pid: PostgreSQL backend process ID.
+  query: Most recently observed statement in the session.
+  state: Current backend state.
+  usename: Connected PostgreSQL role.
+  xact_start: Time at which the current transaction began.
+parameters:
+  minimum_duration:
+    type: duration
+    default: 5m
+    description: Minimum transaction duration.
+  limit:
+    type: integer
+    minimum: 1
+    nullable: true
+    default: 20
+    description: Maximum number of rows to show. Use NULL for no limit.
+sql:
+  - requires:
+      postgresql: "14"
+    statement: |
+      SELECT pid, usename, datname, xact_start, pg_catalog.now() - xact_start AS duration, state, query
+      FROM pg_catalog.pg_stat_activity
+      WHERE xact_start IS NOT NULL
+        AND pid <> pg_catalog.pg_backend_pid()
+        AND pg_catalog.now() - xact_start >= @minimum_duration::interval
+      ORDER BY xact_start, pid
+       LIMIT @limit;
