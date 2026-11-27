@@ -12,9 +12,9 @@ const connectionInfoSQL = `
 WITH session_context AS (
     SELECT CAST(pg_catalog.current_setting('server_version_num') AS integer) / 10000 AS server_major_version
          , CASE
-               WHEN pg_catalog.pg_is_in_recovery()
-                   THEN 'replica'
-               ELSE 'primary'
+             WHEN pg_catalog.pg_is_in_recovery()
+               THEN 'replica'
+             ELSE 'primary'
            END AS server_role
          , pg_catalog.current_database() AS database_name
          , CURRENT_USER AS user_name
