@@ -1,0 +1,16 @@
+---
+name: Database activity
+description: Connections, sessions, transactions, and backend activity.
+overview: |-
+  Each PostgreSQL client connection is served by a backend process, and its
+  activity reflects both session and transaction state. Long-running transactions
+  and sessions idle in a transaction can retain locks or delay vacuum cleanup,
+  even when no statement is currently executing. Understanding these states helps
+  investigate connection exhaustion, transaction delays, and database maintenance issues.
+key_concepts:
+  - Idle sessions still consume connection slots and backend memory, even when no queries are executing.
+  - An idle session is different from a session idle in a transaction.
+  - Idle-in-transaction sessions may retain locks and delay vacuum cleanup.
+  - Long-running transactions can contribute to table bloat.
+  - Application names help identify connection ownership.
+  - Transaction age differs from the duration of the current statement.

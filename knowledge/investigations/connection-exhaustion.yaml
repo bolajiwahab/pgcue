@@ -1,0 +1,11 @@
+---
+name: Connection exhaustion
+description: Investigate reports that applications cannot obtain database connections.
+topics: [activity, locks]
+steps:
+  - check: activity.connections
+    reason: See how current connections are distributed by application, user, and state.
+  - check: activity.idle_transactions
+    reason: Find sessions retaining a connection while idle inside a transaction.
+  - check: activity.long_transactions
+    reason: Find long-lived transactions that may keep connections occupied.

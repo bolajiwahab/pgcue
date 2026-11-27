@@ -1,0 +1,55 @@
+---
+name: Idle transactions
+description: Shows sessions left idle inside a transaction beyond a specified duration.
+requires_monitor: true
+result: current
+guidance:
+  use_when:
+    - Vacuum cannot remove old row versions or tables are accumulating dead tuples.
+    - Applications may be leaving transactions open between requests.
+  inspect:
+    - Old transaction start times and long idle durations.
+    - Repeated application names, users, or query patterns.
+  related:
+    - activity.long_transactions
+    - locks.blocking
+    - vacuum.dead_tuples
+columns:
+  application_name: Client-supplied application name.
+  database_name: Database to which the session is connected.
+  duration: Time elapsed since the transaction began.
+  pid: PostgreSQL backend process ID.
+  query: Most recently observed statement in the session.
+  state: Current backend state.
+  transaction_started: Time at which the current transaction began.
+  user_name: Connected PostgreSQL role.
+parameters:
+  minimum_duration:
+    type: duration
+    default: 5m
+    description: Minimum time a transaction must have remained open.
+  limit:
+    type: integer
+    minimum: 1
+    nullable: true
+    default: 20
+    description: Maximum number of rows to show. Use NULL for no limit.
+sql:
+  - requires:
+      postgresql: "14"
+    statement: |
+      SELECT pid
+           , usename AS user_name
+           , datname AS database_name
+           , application_name
+           , xact_start AS transaction_started
+           , pg_catalog.now() - xact_start AS duration
+           , state
+           , query
+        FROM pg_catalog.pg_stat_activity
+       WHERE state IN ('idle in transaction', 'idle in transaction (aborted)')
+         AND xact_start IS NOT NULL
+         AND pid <> pg_catalog.pg_backend_pid()
+         AND pg_catalog.now() - xact_start >= @minimum_duration::interval
+       ORDER BY xact_start, pid
+       LIMIT @limit;
